@@ -17,6 +17,7 @@
 ;; ------------------------------------------------------------
 ;; UI / Quality of Life
 ;; ------------------------------------------------------------
+(setq inhibit-startup-screen t)
 (global-display-line-numbers-mode 1)
 (menu-bar-mode -1)
 (tool-bar-mode -1)
@@ -52,6 +53,71 @@
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode))
+
+;; ------------------------------------------------------------
+;; TypeScript / TSX
+;; ------------------------------------------------------------
+
+;; Major mode for .ts / .tsx
+(use-package typescript-mode
+  :mode ("\\.ts\\'" "\\.tsx\\'")
+  :init
+  (setq typescript-indent-level 2))
+
+;; Optional: treat TSX as web-mode (better JSX/TSX editing)
+;; If you prefer to keep .tsx in typescript-mode, remove this.
+(use-package web-mode
+  :mode ("\\.tsx\\'" "\\.jsx\\'")
+  :init
+  (setq web-mode-markup-indent-offset 2
+        web-mode-code-indent-offset 2
+        web-mode-css-indent-offset 2))
+
+;; LSP integration for TypeScript/JavaScript
+;; Requires: npm i -g typescript typescript-language-server
+(use-package lsp-mode
+  :hook ((typescript-mode . lsp)
+         (web-mode        . (lambda ()
+                              (when (string-match-p "\\.[jt]sx\\'" (or buffer-file-name ""))
+                                (lsp))))
+         (js-mode         . lsp)
+         (js2-mode        . lsp))
+  :config
+  ;; Prefer LSP completion (company-capf)
+  (setq lsp-completion-provider :capf)
+
+  ;; TypeScript-specific LSP settings
+  (setq lsp-clients-typescript-preferences
+        '(:includeCompletionsForModuleExports t
+          :includeCompletionsWithInsertText t))
+
+  ;; If you don't want LSP formatting (because you use Prettier), disable it:
+  ;; (setq lsp-enable-on-type-formatting nil)
+  ;; (setq lsp-enable-indentation nil)
+  ;; (setq lsp-enable-formatting nil)
+  )
+
+;; Prettier formatting
+;; Requires: npm i -g prettier
+;; If you use project-local prettier, this still works via node_modules/.bin if in PATH.
+(use-package prettier-js
+  :hook ((typescript-mode . prettier-js-mode)
+         (web-mode        . prettier-js-mode)
+         (js-mode         . prettier-js-mode)))
+
+;; Linting (optional but recommended)
+;; Requires: npm i -g eslint (or project-local)
+(use-package flycheck
+  :init (global-flycheck-mode))
+
+(use-package lsp-ui
+  :after lsp-mode
+  :config
+  ;; Nice defaults for TS/JS (optional)
+  (setq lsp-ui-doc-enable t
+        lsp-ui-sideline-enable t
+        lsp-ui-sideline-show-code-actions t))
+
 
 ;; ------------------------------------------------------------
 ;; LaTeX / AUCTeX / PDF Tools
